@@ -38,7 +38,20 @@ GCP 콘솔 > **VPC 네트워크 > 방화벽**에서 8080 포트가 열려 있는
 
 ---
 
-## 2. Cloud Run 배포 (서버리스 대안)
+## 2. Cloud Run 배포 (서버리스 대안 — 현재 쓰는 방식)
+
+findchem-mcp와 같은 GCP 프로젝트·서울 리전(asia-northeast3)에 별도 서비스 `letter-collector`로 올린다.
+gcloud 로그인이 된 곳(findchem 클라우드 세션: `bash scripts/gcp_auth.sh`)에서 이 저장소를 받아 실행한다:
+
+```bash
+git clone https://github.com/Brad0329/lettercollector.git
+bash lettercollector/scripts/deploy_cloudrun.sh
+```
+
+- 설정(서버 최대 1대·안 쓰면 0대·512Mi·300초·공개 접속)과 그 이유는 스크립트 머리 주석에 있다.
+- 첫 배포 때 서비스 주소를 `LETTER_PUBLIC_BASE_URL`로 자동으로 넣는다(리비전이 하나 더 생긴다).
+- 이미지는 `--source .`로 Cloud Build가 이 저장소의 Dockerfile을 빌드한다(`.gcloudignore`가 storage/·.venv 등을 뺀다).
+- 저장소(`storage/`)는 메모리 위라 서버가 다시 켜질 때마다 비워진다 — 다음 호출 때 zdic에서 다시 받는다.
 
 ---
 
