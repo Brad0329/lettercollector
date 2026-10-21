@@ -42,8 +42,22 @@ def generate_grid_image(
     grid_img = Image.new("RGB", (grid_width, grid_height), color=(255, 255, 255))
     draw = ImageDraw.Draw(grid_img)
 
-    # Use default font
-    font = ImageFont.load_default()
+    # Use system font with CJK support if available, otherwise fallback
+    font = None
+    for candidate in [
+        "C:/Windows/Fonts/malgun.ttf",
+        "C:/Windows/Fonts/gulim.ttc",
+        "/usr/share/fonts/truetype/nanum/NanumGothic.ttf",
+        "/System/Library/Fonts/AppleSDGothicNeo.ttc",
+    ]:
+        if Path(candidate).exists():
+            try:
+                font = ImageFont.truetype(candidate, size=11)
+                break
+            except Exception:
+                pass
+    if font is None:
+        font = ImageFont.load_default()
 
     for i, item in enumerate(items):
         r = i // cols
