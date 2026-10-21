@@ -42,12 +42,18 @@ def generate_grid_image(
     grid_img = Image.new("RGB", (grid_width, grid_height), color=(255, 255, 255))
     draw = ImageDraw.Draw(grid_img)
 
-    # Use system font with CJK support if available, otherwise fallback
+    # Use system font with CJK (Simplified Chinese & Korean) support
     font = None
     for candidate in [
+        "C:/Windows/Fonts/msyh.ttc",  # Microsoft YaHei (supports Simplified Chinese & Korean)
+        "C:/Windows/Fonts/msyhl.ttc",
+        "C:/Windows/Fonts/simsun.ttc",
+        "C:/Windows/Fonts/simhei.ttf",
         "C:/Windows/Fonts/malgun.ttf",
         "C:/Windows/Fonts/gulim.ttc",
+        "/usr/share/fonts/truetype/wqy/wqy-zenhei.ttc",
         "/usr/share/fonts/truetype/nanum/NanumGothic.ttf",
+        "/System/Library/Fonts/PingFang.ttc",
         "/System/Library/Fonts/AppleSDGothicNeo.ttc",
     ]:
         if Path(candidate).exists():
