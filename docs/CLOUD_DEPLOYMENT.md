@@ -4,45 +4,41 @@
 
 ---
 
-## 1. Cloud Run 배포 (가장 추천 — 서버리스, 월 0원)
+## 1. Compute Engine (VM) 배포 (추천: 기존 VM 보유 시)
 
-GCP의 **Cloud Run**은 요청이 있을 때만 컨테이너가 켜지는 서버리스 환경으로, 개인 사용량 수준에서는 **완전 무료(Free Tier)**로 운영할 수 있습니다.
+이미 생성해 두신 GCP VM 인스턴스가 있다면, **로컬 `storage/` 폴더에 이미지가 영구 보존**되므로 별도의 버킷 설정 없이 가장 빠르고 안정적입니다.
 
-### 배포 순서 (터미널에서 1줄 실행)
+### 1.1 VM에 접속하여 설치 (SSH 터미널)
 
-`gcloud` CLI가 설치된 터미널에서 이 프로젝트 폴더로 이동한 뒤 아래 명령어를 실행합니다:
+1. **프로젝트 코드 가져오기**:
+   ```bash
+   git clone <깃저장소URL> LetterCollector
+   # 또는 로컬 PC에서 scp로 폴더 복사
+   cd LetterCollector
+   ```
 
-```bash
-gcloud run deploy letter-collector \
-  --source . \
-  --region asia-northeast3 \
-  --allow-unauthenticated \
-  --port 8080 \
-  --set-env-vars "MCP_TRANSPORT=sse,LETTER_API_KEY=your_secret_key"
-```
+2. **자동 환경 셋업 스크립트 실행**:
+   ```bash
+   bash scripts/setup_vm.sh
+   ```
+   *(파이썬 가상환경, 필수 패키지, 중국어 간체/한글 깨짐 방지용 CJK 폰트 `fonts-noto-cjk`가 자동 설치됩니다)*
 
-- `--region asia-northeast3`: 서울 리전으로 배포합니다.
-- `--allow-unauthenticated`: 웹/앱/AI가 URL로 바로 접근할 수 있도록 허용합니다 (인증은 `LETTER_API_KEY`로 제어).
-- 배포가 완료되면 `https://letter-collector-xxxxx-du.a.run.app` 형태의 HTTPS 주소가 발급됩니다.
+3. **자동 재시작 백그라운드 서비스(systemd) 등록**:
+   ```bash
+   bash scripts/install_service.sh
+   ```
+   *(VM이 재부팅되더라도 자동으로 8080 포트에서 서버가 켜집니다)*
+
+### 1.2 GCP 방화벽 규칙 확인 (포트 8080 허용)
+
+GCP 콘솔 > **VPC 네트워크 > 방화벽**에서 8080 포트가 열려 있는지 확인합니다:
+- 대상: 네트워크의 모든 인스턴스 (또는 해당 VM 태그)
+- 소스 IP 범위: `0.0.0.0/0`
+- 프로토콜 및 포트: `tcp:8080`
 
 ---
 
-## 2. Compute Engine (VM) 배포
-
-저장된 이미지 파일들을 로컬 폴더처럼 영구히 보관하고 싶다면 작은 VM(무료 티어 e2-micro)에 올릴 수 있습니다.
-
-```bash
-# VM 내부에서 실행
-git clone <저장소URL> LetterCollector
-cd LetterCollector
-uv venv
-uv pip install -e .
-
-# 백그라운드 HTTP 실행
-export PORT=8080
-export MCP_TRANSPORT=sse
-python -m src.server
-```
+## 2. Cloud Run 배포 (서버리스 대안)
 
 ---
 

@@ -1,0 +1,22 @@
+[Unit]
+Description=LetterCollector Cursive MCP & REST API Server
+After=network.target
+
+[Service]
+Type=simple
+User=%USER%
+WorkingDirectory=%WORKDIR%
+Environment=PORT=8080
+Environment=HOST=0.0.0.0
+Environment=MCP_TRANSPORT=sse
+Environment=PYTHONUNBUFFERED=1
+Environment=PYTHONIOENCODING=utf-8
+# Optional: Set secret API key for mobile apps / remote clients
+# Environment=LETTER_API_KEY=your_secret_key_here
+
+ExecStart=%WORKDIR%/.venv/bin/python -m src.server
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
