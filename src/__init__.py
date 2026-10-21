@@ -1,0 +1,1 @@
+"""LetterCollector MCP Server."""
