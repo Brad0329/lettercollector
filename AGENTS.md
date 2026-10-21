@@ -6,7 +6,7 @@ LLM(Antigravity, Claude Desktop, Cursor 등)에 Tools · Resources를 제공하�
 
 ## 현재 단계
 - 전체 Phase 체크리스트/도구 구조의 **단일 원본 = `work_log/plan.md`** (중복 기재 금지)
-- 현재: **Phase 006 완료 — 모든 구현 및 검증 완료** (2026-10-21)
+- 현재: **Phase 007 완료 — Cloud 배포 및 REST API 확장 완료** (2026-10-21)
 
 ## 새 세션 시작 시
 1. **이 파일(AGENTS.md)을 읽는다** — 매 세션의 규칙 기준.

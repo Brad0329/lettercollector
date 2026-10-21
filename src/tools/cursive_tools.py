@@ -1,6 +1,7 @@
 """Core MCP tools for searching, collecting and inspecting Chinese cursive script calligraphy."""
 import asyncio
 from pathlib import Path
+from typing import Any
 
 from src.collector.models import CursiveCharIndex
 from src.collector.storage import CursiveStorage
@@ -8,6 +9,7 @@ from src.collector.visualizer import generate_grid_image, generate_html_gallery
 from src.collector.zdic_client import ZdicClient
 from src.common.exceptions import CursiveErrorKind, CursiveException
 from src.common.logging import logger
+from fastmcp.utilities.types import Image
 
 storage = CursiveStorage()
 zdic_client = ZdicClient()
@@ -110,11 +112,13 @@ async def find_cursive(char: str, refresh: bool = False) -> str:
     if len(top_calligraphers) > 10:
         calligrapher_summary_lines.append(f"- *(외 {len(top_calligraphers) - 10}명의 서예가)*")
 
+    grid_uri = Path(index_obj.grid_image_path).as_uri() if index_obj.grid_image_path else ""
+    grid_embed = f"\n\n![{clean_char} 초서 격자 미리보기]({grid_uri})" if grid_uri else ""
     grid_info = f"- **격자 합성 미리보기**: `{index_obj.grid_image_path}`" if index_obj.grid_image_path else ""
     gallery_info = f"- **브라우저 HTML 갤러리**: `{index_obj.gallery_html_path}`" if index_obj.gallery_html_path else ""
     calligraphers_text = "\n".join(calligrapher_summary_lines)
 
-    return f"""### 📜 '{clean_char}' 초서(草書) 수집 결과 요약
+    summary_text = f"""### 📜 '{clean_char}' 초서(草書) 수집 결과 요약
 
 - **글자**: `{clean_char}` (저장 대표명: `{index_obj.canonical_char}`)
 - **총 수집 장수**: **{index_obj.total_count}장**
@@ -122,15 +126,19 @@ async def find_cursive(char: str, refresh: bool = False) -> str:
 - **저장 위치**: `{index_obj.storage_dir}`
 {grid_info}
 {gallery_info}
+{grid_embed}
 
 #### 주요 서예가별 장수
 {calligraphers_text}
 
 > 특정 서예가의 이미지를 열람하려면 `get_cursive_image(char='{clean_char}', index=N)` 도구를 호출하세요 (1 ~ {index_obj.total_count}).
 """
+    if index_obj.grid_image_path and Path(index_obj.grid_image_path).exists():
+        return [summary_text, Image(path=index_obj.grid_image_path)]
+    return summary_text
 
 
-async def get_cursive_image(char: str, index: int) -> str:
+async def get_cursive_image(char: str, index: int) -> Any:
     """
     Get information and the local file path of a specific cursive script image by index (1-based) for a Chinese character.
 
@@ -168,8 +176,11 @@ async def get_cursive_image(char: str, index: int) -> str:
         )
 
     target_item = cached.items[index - 1]
+    img_uri = Path(target_item.file_path).as_uri()
 
-    return f"""### 🖼️ '{clean_char}' 초서 이미지 #{target_item.index}
+    info_text = f"""### 🖼️ '{clean_char}' 초서 이미지 #{target_item.index}
+
+![{clean_char} #{target_item.index} {target_item.calligrapher_ko}]({img_uri})
 
 - **서예가**: **{target_item.calligrapher_ko}** ({target_item.calligrapher})
 - **파일명**: `{target_item.filename}`
@@ -177,3 +188,6 @@ async def get_cursive_image(char: str, index: int) -> str:
 - **원본 웹 URL**: {target_item.url}
 - **전체 장수 중 순번**: {target_item.index} / {cached.total_count}
 """
+    if Path(target_item.file_path).exists():
+        return [info_text, Image(path=target_item.file_path)]
+    return info_text

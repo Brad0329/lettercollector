@@ -40,7 +40,7 @@
   - `char` (`str`, 필수): 검색할 한자 1글자.
   - `refresh` (`bool`, 선택, 기본값 `False`): 캐시를 무시하고 새로 수집할지 여부.
 - **반환 형식 (Return Format)**:
-  - 성공 시: 마크다운 텍스트 (총 장수, 서예가별 장수, 저장 폴더, `grid.png` 경로, `index.html` 경로)
+  - 성공 시: 마크다운 텍스트(총 장수, 서예가별 장수, 저장 폴더, `grid.png` 경로, `index.html` 경로) + **ImageContent (격자 합성 이미지 base64 직접 반환)**
   - 실패 시: `isError=True` 또는 명확한 오류 안내 텍스트.
 - **부작용 및 보안 수준 (Side Effect & Security)**:
   - 보안 수준: **Local File Write & External Network GET/POST**
@@ -68,7 +68,7 @@
   - `char` (`str`, 필수): 한자 1글자.
   - `index` (`int`, 필수): 1-based 순번.
 - **반환 형식 (Return Format)**:
-  - 서예가 이름, 로컬 이미지 절대 파일 경로, 원본 URL 등 마크다운 안내.
+  - 서예가 이름, 로컬 이미지 절대 파일 경로, 원본 URL 등 마크다운 안내 + **ImageContent (해당 원본 이미지 base64 직접 반환)**
 
 ---
 

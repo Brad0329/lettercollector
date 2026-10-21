@@ -1,0 +1,12 @@
+.git/
+.venv/
+.pytest_cache/
+tests/
+work_log/
+agents/
+scripts/
+docs/
+*.pyc
+__pycache__/
+storage/
+.env

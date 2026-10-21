@@ -47,9 +47,9 @@ async def test_find_cursive_cached(tmp_path):
 
     with patch("src.tools.cursive_tools.storage.get_index", return_value=dummy_index):
         result = await find_cursive("書")
-        assert "**총 수집 장수**: **1장**" in result
-        assert "grid.png" in result
-
+        res_text = result[0] if isinstance(result, list) else result
+        assert "**총 수집 장수**: **1장**" in res_text
+        assert "grid.png" in res_text
 
 @pytest.mark.asyncio
 async def test_get_cursive_image_bounds(tmp_path):
@@ -85,7 +85,8 @@ async def test_get_cursive_image_bounds(tmp_path):
     with patch("src.tools.cursive_tools.storage.get_index", return_value=dummy_index):
         # Valid index 1
         res1 = await get_cursive_image("書", 1)
-        assert "초서 이미지 #1" in res1
+        res1_text = res1[0] if isinstance(res1, list) else res1
+        assert "초서 이미지 #1" in res1_text
         assert "001_황정견.gif" in res1
 
         # Out of bounds index 3

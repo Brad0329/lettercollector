@@ -29,6 +29,12 @@
 2. **Resources (데이터 읽기)**:
    - `cursive://list`: 로컬에 캐시된 수집 완료 한자 목록 반환.
    - `cursive://char/{char}`: 특정 한자의 수집 메타데이터(`index.json`) 반환.
+3. **REST API & Web Endpoints (모바일 앱 및 웹 서빙)**:
+   - `GET /health`: 헬스체크 (Cloud Run / LB용)
+   - `GET /api/cursive/{char}`: 모바일 앱(hanjadic 등) 및 프론트엔드용 초서 메타데이터 JSON API
+   - `GET /gallery/{char}`: 브라우저용 반응형 HTML 갤러리 서빙
+   - `GET /images/{char}/{filename}`: 이미지 파일(GIF, grid.png) 직접 서빙
+   - `POST /mcp` (또는 Streamable HTTP): 원격 MCP 클라이언트 연동 규약
 
 ---
 

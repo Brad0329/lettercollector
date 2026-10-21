@@ -1,4 +1,5 @@
 """LetterCollector MCP Server Entrypoint."""
+import os
 import sys
 
 # Ensure UTF-8 I/O encoding on Windows to prevent stdio protocol destruction
@@ -7,10 +8,17 @@ if hasattr(sys.stdout, "reconfigure"):
 if hasattr(sys.stderr, "reconfigure"):
     sys.stderr.reconfigure(encoding="utf-8")
 
+from typing import Any
 from fastmcp import FastMCP
 
 from src.common.logging import logger
 from src.resources.cursive_resources import get_character_metadata, list_cached_characters
+from src.routes import (
+    get_cursive_api_route,
+    get_gallery_html_route,
+    get_image_file_route,
+    health_check_route,
+)
 from src.tools.cursive_tools import find_cursive as _find_cursive
 from src.tools.cursive_tools import get_cursive_image as _get_cursive_image
 
@@ -18,10 +26,18 @@ from src.tools.cursive_tools import get_cursive_image as _get_cursive_image
 mcp = FastMCP("LetterCollector")
 
 # ---------------------------------------------------------
+# Custom Web & REST API Routes (Cloud / App / Web support)
+# ---------------------------------------------------------
+mcp.custom_route("/health", methods=["GET"])(health_check_route)
+mcp.custom_route("/api/cursive/{char}", methods=["GET"])(get_cursive_api_route)
+mcp.custom_route("/gallery/{char}", methods=["GET"])(get_gallery_html_route)
+mcp.custom_route("/images/{char}/{filename}", methods=["GET"])(get_image_file_route)
+
+# ---------------------------------------------------------
 # MCP Tools
 # ---------------------------------------------------------
 @mcp.tool()
-async def find_cursive(char: str, refresh: bool = False) -> str:
+async def find_cursive(char: str, refresh: bool = False) -> Any:
     """Find and retrieve all cursive script (草書) calligraphy images for a given Chinese character from sf.zdic.net, saving them to local storage and returning statistics, a visual grid summary image path, and an HTML gallery path.
 
     WHEN TO USE:
@@ -39,7 +55,7 @@ async def find_cursive(char: str, refresh: bool = False) -> str:
 
 
 @mcp.tool()
-async def get_cursive_image(char: str, index: int) -> str:
+async def get_cursive_image(char: str, index: int) -> Any:
     """Get information and the local file path of a specific cursive script image by index (1-based) for a Chinese character.
 
     WHEN TO USE:
@@ -71,9 +87,23 @@ def get_character_metadata_resource(char: str) -> str:
 
 
 def main() -> None:
-    """Run FastMCP server over standard stdio."""
-    logger.info("Starting LetterCollector MCP Server via stdio...")
-    mcp.run()
+    """Run FastMCP server.
+
+    If PORT environment variable is set (e.g. Google Cloud Run) or MCP_TRANSPORT=sse,
+    runs over HTTP (SSE/Streamable HTTP) transport with REST APIs enabled.
+    Otherwise defaults to standard stdio transport for local AI tools (Claude Desktop / Claude Code / Antigravity).
+    """
+    port_env = os.environ.get("PORT")
+    transport_env = os.environ.get("MCP_TRANSPORT", "").lower()
+
+    if port_env or transport_env in ("http", "sse"):
+        port = int(port_env or "8080")
+        host = os.environ.get("HOST", "0.0.0.0")
+        logger.info("Starting LetterCollector Server on %s:%d via SSE/HTTP...", host, port)
+        mcp.run(transport="sse", host=host, port=port)
+    else:
+        logger.info("Starting LetterCollector MCP Server via stdio...")
+        mcp.run()
 
 
 if __name__ == "__main__":
