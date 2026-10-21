@@ -88,7 +88,7 @@ GCP 콘솔 > **VPC 네트워크 > 방화벽**에서 8080 포트가 열려 있는
 ```bash
 claude mcp add --transport http --scope global letter-collector https://<서버URL>/mcp
 ```
-*(API Key 설정 시 `--header "X-API-Key: your_secret_key"` 추가)*
+*(`LETTER_API_KEY`는 REST `/api/cursive`만 보호한다 — `/mcp`에는 헤더가 필요 없다)*
 
 ### 3.4 클로드 데스크톱 (Claude Desktop) 원격 연동
 `claude_desktop_config.json`:
@@ -110,6 +110,7 @@ claude mcp add --transport http --scope global letter-collector https://<서버U
 |---|---|---|
 | `PORT` | `8080` | HTTP 서버 포트 (GCP Cloud Run 자동 주입) |
 | `HOST` | `0.0.0.0` | 바인딩 호스트 |
-| `MCP_TRANSPORT` | `sse` | 전송 모드 (`sse` 또는 `stdio`) |
-| `LETTER_API_KEY` | *(미설정 시 무인증)* | 외부 무단 호출 방지용 비밀 키 |
-| `LETTER_STORAGE_DIR` | `/app/storage` | 초서 이미지 및 메타데이터 저장 경로 |
+| `MCP_TRANSPORT` | `http` | 전송 모드. `http` = Streamable HTTP(`/mcp`, stateless) / `sse` = 구식 SSE(`/sse`, 옛 클라이언트용) / 미설정·PORT 없음 = stdio |
+| `LETTER_PUBLIC_BASE_URL` | *(미설정 시 로컬 경로)* | 서버 공개 주소. 설정하면 도구 답에 서버 내부 경로 대신 `https://…/images/…`·`/gallery/…` 웹 주소를 넣는다 |
+| `LETTER_API_KEY` | *(미설정 시 무인증)* | `/api/cursive` REST만 보호한다 — MCP(`/mcp`)는 인증 없음 |
+| `LETTER_STORAGE_DIR` | `/app/storage` | 초서 이미지 및 메타데이터 저장 경로. **Cloud Run에서는 메모리 위라 콜드 스타트마다 비워진다** — 다음 호출 때 zdic에서 다시 받는다(사용량이 적어 감수) |

@@ -7,6 +7,8 @@ from src.collector.models import CursiveCharIndex
 from src.collector.storage import CursiveStorage
 from src.collector.visualizer import generate_grid_image, generate_html_gallery
 from src.collector.zdic_client import ZdicClient
+from src.common import config
+from src.common.config import public_url
 from src.common.exceptions import CursiveErrorKind, CursiveException
 from src.common.logging import logger
 from fastmcp.utilities.types import Image
@@ -112,19 +114,28 @@ async def find_cursive(char: str, refresh: bool = False) -> str:
     if len(top_calligraphers) > 10:
         calligrapher_summary_lines.append(f"- *(외 {len(top_calligraphers) - 10}명의 서예가)*")
 
-    grid_uri = Path(index_obj.grid_image_path).as_uri() if index_obj.grid_image_path else ""
-    grid_embed = f"\n\n![{clean_char} 초서 격자 미리보기]({grid_uri})" if grid_uri else ""
-    grid_info = f"- **격자 합성 미리보기**: `{index_obj.grid_image_path}`" if index_obj.grid_image_path else ""
-    gallery_info = f"- **브라우저 HTML 갤러리**: `{index_obj.gallery_html_path}`" if index_obj.gallery_html_path else ""
     calligraphers_text = "\n".join(calligrapher_summary_lines)
+    canonical = index_obj.canonical_char
+    if config.PUBLIC_BASE_URL:
+        # Remote server: local paths mean nothing to the client — give web URLs instead.
+        grid_url = public_url(canonical, "grid.png") if index_obj.grid_image_path else ""
+        grid_embed = f"\n\n![{clean_char} 초서 격자 미리보기]({grid_url})" if grid_url else ""
+        grid_info = f"- **격자 합성 미리보기**: {grid_url}" if grid_url else ""
+        gallery_info = f"- **브라우저 HTML 갤러리**: {public_url(canonical)}" if index_obj.gallery_html_path else ""
+        location_line = ""
+    else:
+        grid_uri = Path(index_obj.grid_image_path).as_uri() if index_obj.grid_image_path else ""
+        grid_embed = f"\n\n![{clean_char} 초서 격자 미리보기]({grid_uri})" if grid_uri else ""
+        grid_info = f"- **격자 합성 미리보기**: `{index_obj.grid_image_path}`" if index_obj.grid_image_path else ""
+        gallery_info = f"- **브라우저 HTML 갤러리**: `{index_obj.gallery_html_path}`" if index_obj.gallery_html_path else ""
+        location_line = f"- **저장 위치**: `{index_obj.storage_dir}`\n"
 
     summary_text = f"""### 📜 '{clean_char}' 초서(草書) 수집 결과 요약
 
 - **글자**: `{clean_char}` (저장 대표명: `{index_obj.canonical_char}`)
 - **총 수집 장수**: **{index_obj.total_count}장**
 - **서예가 수**: {len(index_obj.calligrapher_counts)}명
-- **저장 위치**: `{index_obj.storage_dir}`
-{grid_info}
+{location_line}{grid_info}
 {gallery_info}
 {grid_embed}
 
@@ -176,7 +187,12 @@ async def get_cursive_image(char: str, index: int) -> Any:
         )
 
     target_item = cached.items[index - 1]
-    img_uri = Path(target_item.file_path).as_uri()
+    if config.PUBLIC_BASE_URL:
+        img_uri = public_url(cached.canonical_char, target_item.filename)
+        location_line = f"- **이미지 URL**: {img_uri}"
+    else:
+        img_uri = Path(target_item.file_path).as_uri()
+        location_line = f"- **로컬 파일 경로**: `{target_item.file_path}`"
 
     info_text = f"""### 🖼️ '{clean_char}' 초서 이미지 #{target_item.index}
 
@@ -184,7 +200,7 @@ async def get_cursive_image(char: str, index: int) -> Any:
 
 - **서예가**: **{target_item.calligrapher_ko}** ({target_item.calligrapher})
 - **파일명**: `{target_item.filename}`
-- **로컬 파일 경로**: `{target_item.file_path}`
+{location_line}
 - **원본 웹 URL**: {target_item.url}
 - **전체 장수 중 순번**: {target_item.index} / {cached.total_count}
 """

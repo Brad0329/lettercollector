@@ -50,6 +50,12 @@ async def test_gallery_html_endpoint(app):
         assert resp.status_code == 200
         assert "text/html" in resp.headers["content-type"]
         assert "草書 '永' 서예 갤러리" in resp.text
+        # Relative <img src> must resolve under /images/永/, not /gallery/
+        assert '<base href="/images/%E6%B0%B8/">' in resp.text
+        first_img = resp.text.split('<img src="', 1)[1].split('"', 1)[0]
+        img_resp = await client.get(f"/images/永/{first_img}")
+        assert img_resp.status_code == 200
+        assert img_resp.headers["content-type"] == "image/gif"
 
 
 @pytest.mark.asyncio

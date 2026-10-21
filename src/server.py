@@ -89,8 +89,10 @@ def get_character_metadata_resource(char: str) -> str:
 def main() -> None:
     """Run FastMCP server.
 
-    If PORT environment variable is set (e.g. Google Cloud Run) or MCP_TRANSPORT=sse,
-    runs over HTTP (SSE/Streamable HTTP) transport with REST APIs enabled.
+    If PORT environment variable is set (e.g. Google Cloud Run) or MCP_TRANSPORT=http|sse,
+    runs over HTTP with REST APIs enabled:
+    - default: Streamable HTTP at /mcp, stateless (survives Cloud Run instance restarts/scale-out)
+    - MCP_TRANSPORT=sse: legacy SSE at /sse (kept for old clients only)
     Otherwise defaults to standard stdio transport for local AI tools (Claude Desktop / Claude Code / Antigravity).
     """
     port_env = os.environ.get("PORT")
@@ -99,8 +101,12 @@ def main() -> None:
     if port_env or transport_env in ("http", "sse"):
         port = int(port_env or "8080")
         host = os.environ.get("HOST", "0.0.0.0")
-        logger.info("Starting LetterCollector Server on %s:%d via SSE/HTTP...", host, port)
-        mcp.run(transport="sse", host=host, port=port)
+        if transport_env == "sse":
+            logger.info("Starting LetterCollector Server on %s:%d via SSE (/sse)...", host, port)
+            mcp.run(transport="sse", host=host, port=port)
+        else:
+            logger.info("Starting LetterCollector Server on %s:%d via Streamable HTTP (/mcp)...", host, port)
+            mcp.run(transport="http", host=host, port=port, stateless_http=True)
     else:
         logger.info("Starting LetterCollector MCP Server via stdio...")
         mcp.run()

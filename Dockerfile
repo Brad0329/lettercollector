@@ -5,14 +5,14 @@ ENV PYTHONUNBUFFERED=1 \
     PYTHONIOENCODING=utf-8 \
     PORT=8080 \
     HOST=0.0.0.0 \
-    MCP_TRANSPORT=sse \
+    MCP_TRANSPORT=http \
     LETTER_STORAGE_DIR=/app/storage
 
 WORKDIR /app
 
-# Install system dependencies and CJK fonts to prevent tofu on Chinese/Korean characters in Pillow
+# CJK font for calligrapher names in grid.png (visualizer.py looks for wqy-zenhei on Linux).
+# fonts-noto-cjk was dropped: visualizer never loads it, and it bloated the image by hundreds of MB.
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    fonts-noto-cjk \
     fonts-wqy-zenhei \
     curl \
     && rm -rf /var/lib/apt/lists/*
@@ -27,7 +27,8 @@ RUN uv pip install --system --no-cache -e .
 # Copy application source code
 COPY src/ /app/src/
 
-# Create persistent storage directory
+# Storage directory. On Cloud Run this is in-memory and emptied on every cold start —
+# characters are simply re-fetched from sf.zdic.net on next use (accepted for low traffic).
 RUN mkdir -p /app/storage
 
 EXPOSE 8080

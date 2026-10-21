@@ -1,19 +1,23 @@
 """Custom HTTP routes for web browsers, mobile apps (e.g. hanjadic), and cloud health checks."""
 import os
 from pathlib import Path
+from urllib.parse import quote
 from starlette.requests import Request
 from starlette.responses import FileResponse, HTMLResponse, JSONResponse, Response
 
-from src.collector.storage import CursiveStorage
 from src.collector.visualizer import generate_grid_image, generate_html_gallery
-from src.collector.zdic_client import ZdicClient
 from src.common.config import STORAGE_DIR
 from src.common.exceptions import CursiveErrorKind, CursiveException
 from src.common.logging import logger
-from src.tools.cursive_tools import _download_all_images
+# Share the tools' storage instance: one process serves both, and two instances would each
+# hold their own in-memory char_map and disagree on variant-character mappings.
+from src.tools.cursive_tools import _download_all_images, storage, zdic_client
 
-storage = CursiveStorage()
-zdic_client = ZdicClient()
+
+def _gallery_html(html_text: str, canonical_char: str) -> str:
+    """Point the gallery's relative <img src> at /images/{char}/ when served from /gallery/{char}."""
+    base_tag = f'<base href="/images/{quote(canonical_char)}/">'
+    return html_text.replace("<head>", f"<head>\n  {base_tag}", 1)
 
 
 def _verify_api_key(request: Request) -> bool:
@@ -122,9 +126,9 @@ async def get_gallery_html_route(request: Request) -> Response:
         gallery_file = char_dir / "index.html"
         if not gallery_file.exists():
             return HTMLResponse(f"<h1>'{char}' 글자의 초서 갤러리가 없습니다. 먼저 수집해 주세요.</h1>", status_code=404)
-        return HTMLResponse(gallery_file.read_text(encoding="utf-8"))
+        return HTMLResponse(_gallery_html(gallery_file.read_text(encoding="utf-8"), canonical_char))
 
-    return HTMLResponse(Path(cached.gallery_html_path).read_text(encoding="utf-8"))
+    return HTMLResponse(_gallery_html(Path(cached.gallery_html_path).read_text(encoding="utf-8"), cached.canonical_char))
 
 
 async def get_image_file_route(request: Request) -> Response:
